@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resource Management System — Singleton Demo</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #1e272e 0%, #00897b 100%);
+      --card: #fff;
+      --sidebar: #1e272e;
+      --sidebar-accent: #00a896;
+      --muted: #6b7280;
+      --danger: #e74c3c;
+      --btn: #00a896;
+    }
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg-gradient);
+      margin: 0;
+      color: #333;
+      min-height: 100vh;
+    }
+    .app {
+      max-width: 1150px;
+      margin: 32px auto;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 18px 44px rgba(2,6,23,0.28);
+      background: linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03));
+      display: flex;
+      min-height: 700px;
+    }
+    .sidebar {
+      width: 255px;
+      background: var(--sidebar);
+      color: #e4ecee;
+      padding: 32px 18px;
+      display: flex;
+      flex-direction: column;
+    }
+    .brand {
+      font-size: 22px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 22px;
+      letter-spacing: 2px;
+    }
+    .nav {
+      margin-top: 8px;
+      flex-grow: 1;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      margin-bottom: 9px;
+      font-size: 16px;
+      transition: background 0.19s;
+    }
+    .nav-item.active {
+      background: var(--sidebar-accent);
+      color: #fff;
+      font-weight: 700;
+    }
+    .nav-item:hover {
+      background: rgba(255,255,255,0.038);
+      color: #fff;
+    }
+    .sidebar footer {
+      font-size: 12px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255,255,255,0.09);
+      opacity: 0.7;
+      text-align: center;
+      margin-top: 24px;
+    }
+    .main {
+      flex: 1;
+      background: #f4f7fa;
+      padding: 34px 38px;
+      min-width: 0;
+    }
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .page-header h1 {
+      font-size: 25px;
+      margin: 0;
+      letter-spacing: 1px;
+    }
+    .page-header .subtitle {
+      font-size: 15px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .section { display: none; }
+    .section.active { display: block; }
+    .grid { display: grid; grid-template-columns: 1fr 390px; gap: 16px;}
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 24px;
+      box-shadow: 0 5px 16px rgba(2,6,23,0.06);
+      border: 1px solid rgba(15,23,36,0.03);
+    }
+    .card h3 {
+      margin-bottom: 14px;
+      color: #34495e;
+      letter-spacing: 1px;
+    }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { font-weight: 600; margin-bottom: 7px; display: block; color: #2c3e42; }
+    input, select, textarea {
+      width: 100%;
+      padding: 11px;
+      border-radius: 7px;
+      border: 1px solid #e6eaf2;
+      background: #f6fafd;
+      margin-bottom: 1px;
+      font-size: 15px;
+      resize: vertical;
+    }
+    .btn {
+      background: var(--btn);
+      color: #fff;
+      padding: 11px 16px;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 15px;
+      margin-top: 4px;
+      margin-right: 5px;
+    }
+    .btn:active, .btn:hover {background: #028174;}
+    .delete-btn {
+      background: var(--danger);
+      color: #fff;
+      padding: 7px 13px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .delete-btn:hover { background: #c0392b;}
+    table { width: 100%; border-collapse: collapse; margin-top: 10px;}
+    th, td {padding: 12px 8px; border-bottom: 1px solid #eceded; font-size: 14px; text-align: center;}
+    th {background: #f9fafb; font-weight: 600;}
+    @media (max-width: 1050px) {.grid{grid-template-columns:1fr;}}
+    @media (max-width: 850px) {.sidebar{width:100%;position:static;}.app{flex-direction:column;}}
+  </style>
+</head>
+<body>
+  <div class="nav-item">
+  <a href="index.html" style="color:white; text-decoration:none;">⬅️ Back to Page 1</a>
+</div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">Resource System</div>
+      <nav class="nav">
+        <div class="nav-item active" data-target="resources">🧩 Resource Management</div>
+        <div class="nav-item" data-target="users">👤 Users</div>
+        <div class="nav-item" data-target="allocations">🔗 Allocations</div>
+        <div class="nav-item" data-target="reports">📊 Reports</div>
+        <div class="nav-item" data-target="singleton">🔒 Singleton Demo</div>
+      </nav>
+      <footer>&copy; 2025 ResourceSys</footer>
+    </aside>
+    <main class="main">
+      <div class="page-header">
+        <h1 id="pageTitle">Resource Management</h1>
+        <span class="subtitle" id="pageDesc">Implementing the <b>Singleton Design Pattern</b></span>
+      </div>
+      <!-- Resources -->
+      <section id="resources" class="section active">
+        <div class="grid">
+          <div class="card">
+            <h3>Add New Resource</h3>
+            <div class="form-group"><label>Resource Name</label><input type="text" id="resourceName"></div>
+            <div class="form-group"><label>Type</label><input type="text" id="resourceType"></div>
+            <div class="form-group"><label>Category</label>
+              <select id="resourceCategory"><option>Hardware</option><option>Software</option><option>Other</option></select>
+            </div>
+            <div class="form-group"><label>Description</label><textarea id="resourceDesc"></textarea></div>
+            <div class="form-group"><label>Resource ID</label><input type="text" id="resourceId"></div>
+            <button class="btn" onclick="addResource()">Add Resource</button>
+          </div>
+          <aside class="card">
+            <h3>Quick Stats</h3>
+            <div style="color:var(--muted);margin-bottom:8px;">Total Resources: <strong id="resourcesCount">0</strong></div>
+            <div style="color:var(--muted);margin-bottom:8px;">Available: <strong id="availableCount">0</strong></div>
+            <div style="color:var(--muted);margin-bottom:4px;">Allocated: <strong id="allocatedCount">0</strong></div>
+          </aside>
+        </div>
+        <div class="card">
+          <h3>Resource Inventory</h3>
+          <table id="resourceTable">
+            <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Category</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <!-- Users -->
+      <section id="users" class="section">
+        <div class="card">
+          <h3>Add User</h3>
+          <div class="form-group"><label>User Name</label><input type="text" id="userName"></div>
+          <div class="form-group"><label>User ID</label><input type="text" id="userId"></div>
+          <div class="form-group"><label>Email</label><input type="email" id="userEmail"></div>
+          <div class="form-group"><label>Role</label>
+            <select id="userRole"><option>Admin</option><option>Manager</option><option>Staff</option></select>
+          </div>
+          <button class="btn" onclick="addUser()">Add User</button>
+        </div>
+        <div class="card">
+          <h3>Users List</h3>
+          <table id="userTable">
+            <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Action</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <!-- Allocations -->
+      <section id="allocations" class="section">
+        <div class="card">
+          <h3>Allocate Resource to User</h3>
+          <div class="form-group"><label>Select User</label><select id="allocUser"></select></div>
+          <div class="form-group"><label>Select Resource</label><select id="allocResource"></select></div>
+          <div class="form-group"><label>Start Date</label><input type="date" id="startDate"></div>
+          <div class="form-group"><label>Due Date</label><input type="date" id="dueDate"></div>
+          <button class="btn" onclick="allocateResource()">Allocate</button>
+        </div>
+        <div class="card">
+          <h3>Allocations</h3>
+          <table id="allocationTable">
+            <thead><tr><th>User</th><th>Resource</th><th>Start</th><th>Due</th><th>Status</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <!-- Reports -->
+      <section id="reports" class="section">
+        <div class="card">
+          <h3>Reports</h3>
+          <p id="reportSummary">No data yet.</p>
+          <button class="btn" onclick="generateReport()">Generate Report</button>
+        </div>
+      </section>
+      <!-- Singleton -->
+      <section id="singleton" class="section">
+        <div class="card">
+          <h3>Singleton Demo</h3>
+          <p>Check if only one instance of <b>ResourceManager</b> exists.</p>
+          <button class="btn" onclick="checkSingleton()">Check Singleton Instance</button>
+          <p id="singletonResult" style="margin-top:10px;font-weight:bold;"></p>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    // Navigation logic
+    document.querySelectorAll('.nav-item').forEach(it => {
+      it.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        it.classList.add('active');
+        const tgt = it.getAttribute('data-target');
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(tgt).classList.add('active');
+        document.getElementById('pageTitle').textContent = it.textContent.replace(/^[^ ]+ /, '').trim();
+        document.getElementById('pageDesc').innerHTML = "You are viewing <b>" + it.textContent.replace(/^[^ ]+ /, '').trim() + "</b>";
+        if(tgt === 'resources') updateResourceStats();
+      });
+    });
+
+    // Singleton ResourceManager
+    class ResourceManager {
+      constructor() {
+        if (ResourceManager.instance) return ResourceManager.instance;
+        this.resources = [];
+        this.users = [];
+        this.allocations = [];
+        this.instanceId = Math.random().toString(36).substring(2,8);
+        ResourceManager.instance = this;
+      }
+      addResource(r) { this.resources.push(r); }
+      addUser(u) { this.users.push(u); }
+      allocate(a) { this.allocations.push(a); }
+      getResources() { return this.resources; }
+      getUsers() { return this.users; }
+      getAllocations() { return this.allocations; }
+    }
+    const rm = new ResourceManager();
+
+    // Resource CRUD/UI
+    function addResource() {
+      let name = document.getElementById('resourceName').value.trim();
+      let type = document.getElementById('resourceType').value.trim();
+      let cat = document.getElementById('resourceCategory').value;
+      let desc = document.getElementById('resourceDesc').value.trim();
+      let id = document.getElementById('resourceId').value.trim();
+      if (!name || !type || !id) return alert("Fill all fields!");
+      let resource = {id, name, type, category:cat, description:desc, status:"Available"};
+      rm.addResource(resource);
+      updateResourceTable(); updateAllocResourceOptions(); updateResourceStats();
+      document.getElementById('resourceName').value = "";
+      document.getElementById('resourceType').value = "";
+      document.getElementById('resourceDesc').value = "";
+      document.getElementById('resourceId').value = "";
+    }
+    function updateResourceTable() {
+      let tbody = document.getElementById('resourceTable').querySelector('tbody');
+      tbody.innerHTML = "";
+      rm.getResources().forEach(r => {
+        let row = `<tr><td>${r.id}</td><td>${r.name}</td><td>${r.type}</td><td>${r.category}</td><td>${r.status}</td>
+          <td><button class="delete-btn" onclick="deleteResource('${r.id}')">Delete</button></td></tr>`;
+        tbody.innerHTML += row;
+      });
+      updateResourceStats();
+    }
+    function deleteResource(id) {
+      rm.resources = rm.resources.filter(r => r.id !== id);
+      updateResourceTable(); updateAllocResourceOptions(); updateResourceStats();
+    }
+    function updateResourceStats() {
+      let total = rm.getResources().length;
+      let available = rm.getResources().filter(r=>r.status==="Available").length;
+      let allocated = rm.getResources().filter(r=>r.status==="Allocated").length;
+      document.getElementById('resourcesCount').textContent = total;
+      document.getElementById('availableCount').textContent = available;
+      document.getElementById('allocatedCount').textContent = allocated;
+    }
+
+    // User CRUD/UI
+    function addUser() {
+      let name = document.getElementById('userName').value.trim();
+      let id = document.getElementById('userId').value.trim();
+      let email = document.getElementById('userEmail').value.trim();
+      let role = document.getElementById('userRole').value;
+      if (!name || !id || !email) return alert("Fill all fields!");
+      let user = {id, name, email, role};
+      rm.addUser(user);
+      updateUserTable(); updateAllocUserOptions();
+      document.getElementById('userName').value = "";
+      document.getElementById('userId').value = "";
+      document.getElementById('userEmail').value = "";
+    }
+    function updateUserTable() {
+      let tbody = document.getElementById('userTable').querySelector('tbody');
+      tbody.innerHTML = "";
+      rm.getUsers().forEach(u => {
+        let row = `<tr><td>${u.id}</td><td>${u.name}</td><td>${u.email}</td><td>${u.role}</td>
+          <td><button class="delete-btn" onclick="deleteUser('${u.id}')">Delete</button></td></tr>`;
+        tbody.innerHTML += row;
+      });
+      updateAllocUserOptions();
+    }
+    function deleteUser(id) {
+      rm.users = rm.users.filter(u => u.id !== id);
+      updateUserTable(); updateAllocUserOptions();
+    }
+    function updateAllocUserOptions() {
+      let sel = document.getElementById('allocUser');
+      sel.innerHTML = "";
+      rm.getUsers().forEach(u => sel.innerHTML += `<option value="${u.id}">${u.name}</option>`);
+    }
+    function updateAllocResourceOptions() {
+      let sel = document.getElementById('allocResource');
+      sel.innerHTML = "";
+      rm.getResources().filter(r => r.status === "Available").forEach(r => sel.innerHTML += `<option value="${r.id}">${r.name}</option>`);
+    }
+
+    // Allocations CRUD/UI
+    function allocateResource() {
+      let userId = document.getElementById('allocUser').value;
+      let resId = document.getElementById('allocResource').value;
+      let start = document.getElementById('startDate').value;
+      let due = document.getElementById('dueDate').value;
+      if (!userId || !resId) return alert("Select user and resource!");
+      let user = rm.getUsers().find(u => u.id === userId);
+      let res = rm.getResources().find(r => r.id === resId);
+      if(res) res.status = "Allocated";
+      let alloc = {user: user.name, resource: res.name, start, due, status: "Allocated"};
+      rm.allocate(alloc);
+      updateResourceTable(); updateAllocResourceOptions(); updateAllocTable(); updateResourceStats();
+    }
+    function updateAllocTable() {
+      let tbody = document.getElementById('allocationTable').querySelector('tbody');
+      tbody.innerHTML = "";
+      rm.getAllocations().forEach(a => {
+        tbody.innerHTML += `<tr><td>${a.user}</td><td>${a.resource}</td><td>${a.start}</td><td>${a.due}</td><td>${a.status}</td></tr>`;
+      });
+    }
+
+    // Reports
+    function generateReport() {
+      let totalR = rm.getResources().length;
+      let totalU = rm.getUsers().length;
+      let totalA = rm.getAllocations().length;
+      let available = rm.getResources().filter(r => r.status === "Available").length;
+      let byCat = {};
+      rm.getResources().forEach(r => byCat[r.category] = (byCat[r.category] || 0) + 1);
+      let byRole = {};
+      rm.getUsers().forEach(u => byRole[u.role] = (byRole[u.role] || 0) + 1);
+      document.getElementById('reportSummary').innerText =
+        `Resources: ${totalR} (Available: ${available}), Users: ${totalU}, Allocations: ${totalA}
+         By Category: ${JSON.stringify(byCat)}, By Role: ${JSON.stringify(byRole)}`;
+    }
+
+    // Singleton Demo
+    function checkSingleton() {
+      let rm1 = new ResourceManager(), rm2 = new ResourceManager();
+      document.getElementById('singletonResult').innerText =
+        (rm1 === rm2) ? "✔ Singleton confirmed. Instance ID: " + rm1.instanceId :
+        "❌ Multiple instances detected!";
+    }
+
+    // Initial UI setup
+    updateResourceTable(); updateAllocResourceOptions(); updateResourceStats();
+    updateUserTable(); updateAllocUserOptions();
+    updateAllocTable();
+  </script>
+</body>
+</html>
