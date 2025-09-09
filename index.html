@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Library Management System — Full Demo (Factory pattern)</title>
+  <style>
+    :root{
+      --bg-gradient: linear-gradient(135deg,#4f46e5 0%, #06b6d4 100%);
+      --panel-bg: #f8fafc;
+      --sidebar: #243447;
+      --sidebar-accent: #0ea5a4;
+      --card: #ffffff;
+      --muted:#6b7280;
+      --success:#16a34a;
+      --danger:#ef4444;
+      --glass: rgba(255,255,255,0.06);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;min-height:100vh;background:var(--bg-gradient);color:#0f1724}
+
+    .app{max-width:1200px;margin:28px auto;border-radius:12px;overflow:hidden;box-shadow:0 20px 50px rgba(2,6,23,0.4);background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))}
+    .layout{display:flex;min-height:640px}
+
+    /* Sidebar */
+    .sidebar{width:260px;background:var(--sidebar);color:#e6eef6;padding:28px 18px}
+    .brand{font-size:20px;font-weight:700;text-align:center;margin-bottom:18px}
+    .nav{margin-top:12px}
+    .nav-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;color:var(--muted);cursor:pointer;margin-bottom:8px}
+    .nav-item.active{background:var(--sidebar-accent);color:white;font-weight:700}
+    .nav-item:hover{background:rgba(255,255,255,0.02);color:white}
+
+    /* Content */
+    .content{flex:1;background:var(--panel-bg);padding:28px}
+    .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .page-header h1{margin:0;font-size:24px}
+    .grid{display:grid;grid-template-columns:1fr 420px;gap:18px}
+
+    .card{background:var(--card);border-radius:10px;padding:18px;box-shadow:0 6px 18px rgba(2,6,23,0.06);border:1px solid rgba(15,23,36,0.04)}
+    .form-row{display:flex;gap:10px}
+    .form-group{margin-bottom:12px}
+    label{display:block;font-weight:600;margin-bottom:6px;color:#0f1724}
+    input,select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6eef6;background:#fcfeff}
+    .btn{display:inline-block;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--sidebar-accent);color:white}
+    .btn.ghost{background:transparent;border:1px solid #e6eef6}
+    .btn.danger{background:var(--danger);color:white}
+
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:10px;border-bottom:1px solid #eef2f7;text-align:left;font-size:14px}
+    th{background:#fbfdff;font-weight:700}
+    td.actions{text-align:right}
+
+    /* singleton console */
+    .console{height:220px;overflow:auto;background:#0b1220;color:#dbeafe;padding:12px;border-radius:8px;font-family:ui-monospace,monospace;font-size:13px}
+    .status-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .chip{background:rgba(2,6,23,0.06);padding:8px 10px;border-radius:8px;font-weight:700}
+
+    /* responsive */
+    @media (max-width:980px){
+      .grid{grid-template-columns:1fr}
+      .sidebar{width:100%;display:flex;overflow:auto}
+      .layout{flex-direction:column}
+       .tabs {
+    display: flex;
+    border-bottom: 2px solid #aaa;
+  }
+  .tab {
+    padding: 10px 30px;
+    cursor: pointer;
+    border: 1px solid #aaa;
+    border-bottom: none;
+    background: #eee;
+    margin-right: 3px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    font-weight: bold;
+  }
+  .tab.active {
+    background: #fff;
+    border-bottom: 2px solid #fff;
+  }
+  .tab-content {
+    display: none;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #aaa;
+    border-top: none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+  .tab-content.active {
+    display: block;
+  }
+    }
+    
+  </style>
+</head>
+<body>
+  <div class="app" role="application">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">Library Management</div>
+        <nav class="nav" role="navigation">
+          <div class="nav-item active" data-target="books">📚 Books Management</div>
+          <div class="nav-item" data-target="members">👥 Members Management</div>
+          <div class="nav-item" data-target="borrow">📝 Borrow Books</div>
+          <div class="nav-item" data-target="return">↩️ Return Books</div>
+          <div class="nav-item" data-target="singleton">🏭 Factory Demo</div>
+        </nav>
+        <div style="margin-top:20px;color:var(--muted);font-size:13px">Tip: Data persists locally in your browser (localStorage). Refresh safe.</div>
+      </aside>
+      
+
+      <main class="content">
+        <div class="page-header">
+          <h1 id="pageTitle">Books Management</h1>
+          <div style="color:var(--muted);font-size:14px">Pro demo • Single-file HTML • Local persistence</div>
+        </div>
+
+        <!-- BOOKS -->
+        <section id="books" class="page">
+          <div class="grid">
+            <div class="card">
+              <h3>Add New Book</h3>
+              <div class="form-group"><label>Title</label><input id="bookTitle" placeholder="Enter book title"></div>
+              <div class="form-row">
+                <div style="flex:1" class="form-group"><label>Author</label><input id="bookAuthor" placeholder="Enter author name"></div>
+                <div style="width:200px" class="form-group"><label>ISBN</label><input id="bookISBN" placeholder="Enter ISBN"></div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+                <button class="btn primary" id="addBook">Add Book</button>
+                <button class="btn ghost" id="seedBooks">Reset to Sample</button>
+              </div>
+            </div>
+
+            <aside class="card">
+              <h3>Quick Stats</h3>
+              <div style="margin-top:10px;color:var(--muted)">Total Books: <strong id="booksCount">0</strong></div>
+              <div style="margin-top:6px;color:var(--muted)">Available: <strong id="availableCount">0</strong></div>
+              <div style="margin-top:6px;color:var(--muted)">Borrowed: <strong id="borrowedCount">0</strong></div>
+            </aside>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <h3>Book Inventory</h3>
+            <table>
+              <thead><tr><th>ID</th><th>Title</th><th>Author</th><th>ISBN</th><th>Status</th><th class="actions">Action</th></tr></thead>
+              <tbody id="booksTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- MEMBERS -->
+        <section id="members" class="page" style="display:none">
+          <div class="grid">
+            <div class="card">
+              <h3>Add Member</h3>
+              <div class="form-group"><label>Name</label><input id="memName" placeholder="Member name"></div>
+              <div class="form-group"><label>Type</label>
+                <select id="memType"><option value="Student">Student</option><option value="Faculty">Faculty</option><option value="Guest">Guest</option></select>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:8px"><button class="btn primary" id="addMember">Add Member</button><button class="btn ghost" id="seedMembers">Reset to Sample</button></div>
+            </div>
+            <aside class="card">
+              <h3>Members</h3>
+              <div style="margin-top:10px;color:var(--muted)">Total Members: <strong id="membersCount">0</strong></div>
+            </aside>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <h3>Member List</h3>
+            <table>
+              <thead><tr><th>ID</th><th>Name</th><th>Type</th><th class="actions">Action</th></tr></thead>
+              <tbody id="membersTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- BORROW -->
+        <section id="borrow" class="page" style="display:none">
+          <div class="grid">
+            <div class="card">
+              <h3>Borrow A Book</h3>
+              <div class="form-group"><label>Member</label><select id="borrowMember"></select></div>
+              <div class="form-group"><label>Book (available only)</label><select id="borrowBook"></select></div>
+              <div style="display:flex;gap:8px;margin-top:8px"><button class="btn primary" id="doBorrow">Borrow</button></div>
+              <div style="margin-top:12px;color:var(--muted);font-size:13px">When borrowed, a record is created and the book status flips to <strong>Borrowed</strong>.</div>
+            </div>
+            <aside class="card">
+              <h3>Quick</h3>
+              <div style="margin-top:10px;color:var(--muted)">Active Borrows: <strong id="activeBorrows">0</strong></div>
+            </aside>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <h3>Borrow Records</h3>
+            <table>
+              <thead><tr><th>ID</th><th>Member</th><th>Book</th><th>Borrowed At</th><th>Due Date</th><th class="actions">Action</th></tr></thead>
+              <tbody id="borrowTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- RETURN -->
+        <section id="return" class="page" style="display:none">
+          <div class="card">
+            <h3>Return Books</h3>
+            <div style="margin-top:8px;color:var(--muted);font-size:13px">Return a borrowed book to make it available again.</div>
+          </div>
+          <div class="card" style="margin-top:14px">
+            <h3>Currently Borrowed</h3>
+            <table>
+              <thead><tr><th>ID</th><th>Member</th><th>Book</th><th>Borrowed At</th><th>Due</th><th class="actions">Action</th></tr></thead>
+              <tbody id="returnTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- FACTORY RESOURCE MANAGER -->
+        <section id="singleton" class="page" style="display:none">
+          <div class="grid">
+            <div class="card">
+              <h3>Factory Resource Manager</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+                <button class="btn primary" id="initSingleton">Initialize</button>
+                <button class="btn" id="getCfg">Get Config</button>
+                <button class="btn" id="toggleDb">Open/Close DB</button>
+                <button class="btn" id="createRes">Create Resource</button>
+                <button class="btn ghost" id="resetSingleton">Reset</button>
+              </div>
+              <div style="margin-top:12px" class="status-chips">
+                <div class="chip">Instance: <span id="instChip">—</span></div>
+                <div class="chip">DB: <span id="dbChip">closed</span></div>
+                <div class="chip">Logs: <span id="logsChip">0</span></div>
+              </div>
+              <div style="margin-top:12px" class="console" id="singletonConsole">// console</div>
+            </div>
+            <aside class="card">
+              <h3>Info</h3>
+              <p style="color:var(--muted);margin-top:8px">This demo shows a factory resource manager (factory method, NOT singleton!) that provides config, logging, DB mock, and a resource pool. Useful for global app-wide services.</p>
+            </aside>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    /* -------------------- Local storage helpers -------------------- */
+    function loadData(key, fallback){
+      try{ const v = localStorage.getItem(key); return v? JSON.parse(v) : fallback; } catch(e){ return fallback; }
+    }
+    function saveData(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+    function id(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+    /* -------------------- Seed data -------------------- */
+    const sampleBooks = [
+      {id:'b1',title:'The Great Gatsby',author:'F. Scott Fitzgerald',isbn:'9780743273565',status:'Available'},
+      {id:'b2',title:'To Kill a Mockingbird',author:'Harper Lee',isbn:'9780061120084',status:'Available'},
+      {id:'b3',title:'1984',author:'George Orwell',isbn:'9780451524935',status:'Borrowed'}
+    ];
+    const sampleMembers = [
+      {id:'m1',name:'Alice Sharma',type:'Student'},
+      {id:'m2',name:'Dr. Raj Verma',type:'Faculty'}
+    ];
+
+    /* -------------------- App state -------------------- */
+    let books = loadData('lib_books', sampleBooks.slice());
+    let members = loadData('lib_members', sampleMembers.slice());
+    let borrows = loadData('lib_borrows', [
+      {id:'br1',memberId:'m1',bookId:'b3',borrowedAt:new Date().toISOString(),dueAt:new Date(Date.now()+14*24*3600*1000).toISOString(),returnedAt:null}
+    ]);
+
+    saveData('lib_books', books); saveData('lib_members', members); saveData('lib_borrows', borrows);
+
+    /* -------------------- Navigation -------------------- */
+    const navItems = document.querySelectorAll('.nav-item');
+    const pages = document.querySelectorAll('.page');
+    const pageTitle = document.getElementById('pageTitle');
+
+    navItems.forEach(it=>it.addEventListener('click', ()=>{
+      navItems.forEach(n=>n.classList.remove('active'));
+      it.classList.add('active');
+      const tgt = it.getAttribute('data-target');
+      pages.forEach(p=>p.style.display = p.id === tgt ? '' : 'none');
+      pageTitle.textContent = it.textContent.trim();
+      if(tgt==='books') renderBooks();
+      if(tgt==='members') renderMembers();
+      if(tgt==='borrow') renderBorrowPage();
+      if(tgt==='return') renderReturnPage();
+      if(tgt==='singleton') renderSingletonUI();
+    }));
+
+    /* -------------------- BOOKS -------------------- */
+    const booksTable = document.getElementById('booksTable');
+    const booksCount = document.getElementById('booksCount');
+    const availableCount = document.getElementById('availableCount');
+    const borrowedCount = document.getElementById('borrowedCount');
+
+    function renderBooks(){
+      booksTable.innerHTML = '';
+      books.forEach(b=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${b.id}</td><td>${escapeHtml(b.title)}</td><td>${escapeHtml(b.author)}</td><td>${escapeHtml(b.isbn)}</td><td>${b.status}</td><td class="actions"></td>`;
+        const actions = tr.querySelector('.actions');
+        const del = document.createElement('button'); del.className='btn danger'; del.textContent='Delete';
+        del.onclick = ()=>{ handleDeleteBook(b.id); };
+        actions.appendChild(del);
+        booksTable.appendChild(tr);
+      });
+      booksCount.textContent = books.length;
+      availableCount.textContent = books.filter(b=>b.status==='Available').length;
+      borrowedCount.textContent = books.filter(b=>b.status==='Borrowed').length;
+      saveData('lib_books', books);
+    }
+
+    function handleDeleteBook(bookId){
+      const active = borrows.find(br=>br.bookId===bookId && !br.returnedAt);
+      if(active){ alert('Cannot delete a book that is currently borrowed. Return it first.'); return; }
+      if(!confirm('Delete this book?')) return;
+      books = books.filter(x=>x.id!==bookId);
+      renderBooks();
+    }
+
+    document.getElementById('addBook').addEventListener('click', ()=>{
+      const t=document.getElementById('bookTitle').value.trim();
+      const a=document.getElementById('bookAuthor').value.trim();
+      const i=document.getElementById('bookISBN').value.trim();
+      if(!t||!a||!i){ alert('Fill all fields'); return; }
+      const newBook = {id:'b'+id(),title:t,author:a,isbn:i,status:'Available'};
+      books.push(newBook); saveData('lib_books',books); renderBooks();
+      document.getElementById('bookTitle').value=''; document.getElementById('bookAuthor').value=''; document.getElementById('bookISBN').value='';
+    });
+
+    document.getElementById('seedBooks').addEventListener('click', ()=>{
+      if(!confirm('Replace books with sample data?')) return;
+      books = sampleBooks.slice(); saveData('lib_books',books); renderBooks();
+    });
+
+    /* -------------------- MEMBERS -------------------- */
+    const membersTable = document.getElementById('membersTable');
+    const membersCount = document.getElementById('membersCount');
+
+    function renderMembers(){
+      membersTable.innerHTML = '';
+      members.forEach(m=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${m.id}</td><td>${escapeHtml(m.name)}</td><td>${m.type}</td><td class="actions"></td>`;
+        const actions = tr.querySelector('.actions');
+        const del = document.createElement('button'); del.className='btn danger'; del.textContent='Delete';
+        del.onclick = ()=>{ handleDeleteMember(m.id); };
+        actions.appendChild(del);
+        membersTable.appendChild(tr);
+      });
+      membersCount.textContent = members.length;
+      saveData('lib_members', members);
+    }
+
+    function handleDeleteMember(memberId){
+      const active = borrows.find(br=>br.memberId===memberId && !br.returnedAt);
+      if(active){ alert('Cannot delete member with active borrows.'); return; }
+      if(!confirm('Delete this member?')) return;
+      members = members.filter(x=>x.id!==memberId);
+      renderMembers();
+    }
+
+    document.getElementById('addMember').addEventListener('click', ()=>{
+      const name = document.getElementById('memName').value.trim();
+      const type = document.getElementById('memType').value;
+      if(!name){ alert('Enter a name'); return; }
+      const newMember = {id:'m'+id(),name, type}; members.push(newMember); saveData('lib_members',members); renderMembers();
+      document.getElementById('memName').value='';
+    });
+
+    document.getElementById('seedMembers').addEventListener('click', ()=>{
+      if(!confirm('Replace members with sample data?')) return;
+      members = sampleMembers.slice(); saveData('lib_members',members); renderMembers();
+    });
+
+    /* -------------------- BORROW -------------------- */
+    const borrowMemberSelect = document.getElementById('borrowMember');
+    const borrowBookSelect = document.getElementById('borrowBook');
+    const borrowTable = document.getElementById('borrowTable');
+    const activeBorrows = document.getElementById('activeBorrows');
+
+    function renderBorrowPage(){
+      renderMembers(); renderBooks();
+      borrowMemberSelect.innerHTML = '';
+      members.forEach(m=>{ const opt = document.createElement('option'); opt.value=m.id; opt.textContent=`${m.name} (${m.type})`; borrowMemberSelect.appendChild(opt); });
+      borrowBookSelect.innerHTML = '';
+      books.filter(b=>b.status==='Available').forEach(b=>{ const opt=document.createElement('option'); opt.value=b.id; opt.textContent=`${b.title} — ${b.author}`; borrowBookSelect.appendChild(opt); });
+      renderBorrowsTable();
+    }
+
+    document.getElementById('doBorrow').addEventListener('click', ()=>{
+      if(members.length===0){ alert('No members available. Add a member first.'); return; }
+      if(books.filter(b=>b.status==='Available').length===0){ alert('No available books to borrow.'); return; }
+      const memId = borrowMemberSelect.value; const bookId = borrowBookSelect.value;
+      if(!memId||!bookId){ alert('Select both member and book'); return; }
+      const b = books.find(x=>x.id===bookId);
+      if(!b || b.status!=='Available'){ alert('Book not available'); return; }
+      b.status='Borrowed';
+      const borrowedAt = new Date().toISOString();
+      const dueAt = new Date(Date.now()+14*24*3600*1000).toISOString();
+      const record = {id:'br'+id(), memberId:memId, bookId:bookId, borrowedAt, dueAt, returnedAt:null};
+      borrows.push(record);
+      saveData('lib_books',books); saveData('lib_borrows',borrows);
+      renderBorrowPage();
+      alert('Book borrowed successfully');
+    });
+
+    function renderBorrowsTable(){
+      borrowTable.innerHTML='';
+      borrows.forEach(r=>{
+        const member = members.find(m=>m.id===r.memberId) || {name:'Unknown'};
+        const book = books.find(b=>b.id===r.bookId) || {title:'Unknown'};
+        const tr=document.createElement('tr');
+        tr.innerHTML = `<td>${r.id}</td><td>${escapeHtml(member.name)}</td><td>${escapeHtml(book.title)}</td><td>${new Date(r.borrowedAt).toLocaleDateString()}</td><td>${new Date(r.dueAt).toLocaleDateString()}</td><td class="actions"></td>`;
+        const actions = tr.querySelector('.actions');
+        const ret = document.createElement('button'); ret.className='btn'; ret.textContent='Return';
+        ret.onclick = ()=>{ handleReturn(r.id); };
+        actions.appendChild(ret);
+        borrowTable.appendChild(tr);
+      });
+      activeBorrows.textContent = borrows.filter(b=>!b.returnedAt).length;
+      saveData('lib_borrows', borrows);
+    }
+
+    /* -------------------- RETURN -------------------- */
+    const returnTable = document.getElementById('returnTable');
+
+    function renderReturnPage(){
+      renderBorrowsTable();
+      returnTable.innerHTML='';
+      borrows.filter(r=>!r.returnedAt).forEach(r=>{
+        const member = members.find(m=>m.id===r.memberId) || {name:'Unknown'};
+        const book = books.find(b=>b.id===r.bookId) || {title:'Unknown'};
+        const tr=document.createElement('tr');
+        tr.innerHTML = `<td>${r.id}</td><td>${escapeHtml(member.name)}</td><td>${escapeHtml(book.title)}</td><td>${new Date(r.borrowedAt).toLocaleDateString()}</td><td>${new Date(r.dueAt).toLocaleDateString()}</td><td class="actions"></td>`;
+        const actions = tr.querySelector('.actions');
+        const ret = document.createElement('button'); ret.className='btn primary'; ret.textContent='Return';
+        ret.onclick = ()=>{ handleReturn(r.id); };
+        actions.appendChild(ret);
+        returnTable.appendChild(tr);
+      });
+    }
+
+    function handleReturn(borrowId){
+      const r = borrows.find(x=>x.id===borrowId);
+      if(!r){ alert('Record not found'); return; }
+      if(r.returnedAt){ alert('Already returned'); return; }
+      r.returnedAt = new Date().toISOString();
+      const book = books.find(b=>b.id===r.bookId);
+      if(book) book.status = 'Available';
+      saveData('lib_borrows', borrows); saveData('lib_books', books);
+      renderBorrowPage(); renderReturnPage(); renderBooks();
+      alert('Book returned — status updated');
+    }
+
+    /* -------------------- FACTORY RESOURCE MANAGER -------------------- */
+    class ResourceManager {
+      constructor(){
+        this.config = {app:'LibraryRM', env:'demo', maxResources:5};
+        this.logs = [];
+        this.db = {connected:false,id:null};
+        this.pool = [];
+        this.createdAt = new Date().toISOString();
+      }
+      getConfig(){ return this.config }
+      log(level,msg){ const e={ts:new Date().toISOString(),level,msg}; this.logs.push(e); return e }
+      openDb(){ if(this.db.connected) return this.db; this.db.connected=true; this.db.id='db_'+Math.random().toString(36).slice(2,8); this.log('info','DB opened'); return this.db }
+      closeDb(){ if(!this.db.connected) return this.db; this.db.connected=false; this.log('info','DB closed'); this.db.id=null; return this.db }
+      createResource(name){ if(this.pool.length>=this.config.maxResources) throw new Error('Pool full'); const r={id:'r_'+id(),name,createdAt:new Date().toISOString()}; this.pool.push(r); this.log('debug','resource '+r.id+' created'); return r }
+    }
+    // Factory method: always creates a new instance
+    ResourceManager.factoryInstances = [];
+    ResourceManager.create = function() {
+      const instance = new ResourceManager();
+      ResourceManager.factoryInstances.push(instance);
+      return instance;
+    }
+
+    // UI for Factory ResourceManager (tracks "current instance")
+    let currentFactoryInstance = null;
+
+    const instChip = document.getElementById('instChip');
+    const dbChip = document.getElementById('dbChip');
+    const logsChip = document.getElementById('logsChip');
+    const singletonConsole = document.getElementById('singletonConsole');
+
+    function writeSingleton(...args){ const line = (new Date().toLocaleTimeString())+' — '+args.map(a=> typeof a==='object'? JSON.stringify(a): String(a)).join(' '); singletonConsole.textContent = line + '\n' + singletonConsole.textContent; }
+    function renderSingletonUI(){
+      const inst = currentFactoryInstance;
+      instChip.textContent = inst? 'active' : '—';
+      dbChip.textContent = inst && inst.db.connected? ('connected ('+inst.db.id+')') : 'closed';
+      logsChip.textContent = inst? inst.logs.length : 0;
+    }
+    document.getElementById('initSingleton').addEventListener('click', ()=>{
+      currentFactoryInstance = ResourceManager.create();
+      writeSingleton('Initialized', {createdAt: currentFactoryInstance.createdAt});
+      renderSingletonUI();
+    });
+    document.getElementById('getCfg').addEventListener('click', ()=>{
+      if(!currentFactoryInstance){
+        writeSingleton('No instance');
+        return;
+      }
+      writeSingleton('Config', currentFactoryInstance.getConfig());
+      renderSingletonUI();
+    });
+    document.getElementById('toggleDb').addEventListener('click', ()=>{
+      if(!currentFactoryInstance){
+        writeSingleton('No instance');
+        return;
+      }
+      if(!currentFactoryInstance.db.connected){
+        currentFactoryInstance.openDb();
+        writeSingleton('DB opened', currentFactoryInstance.db.id);
+      } else {
+        currentFactoryInstance.closeDb();
+        writeSingleton('DB closed');
+      }
+      renderSingletonUI();
+    });
+    document.getElementById('createRes').addEventListener('click', ()=>{
+      if(!currentFactoryInstance){
+        writeSingleton('No instance');
+        return;
+      }
+      try{
+        const r = currentFactoryInstance.createResource('resource');
+        writeSingleton('Resource created', r);
+      }catch(e){
+        writeSingleton('ERROR', e.message);
+      }
+      renderSingletonUI();
+    });
+    document.getElementById('resetSingleton').addEventListener('click', ()=>{
+      currentFactoryInstance = null;
+      writeSingleton('Factory instance reset');
+      renderSingletonUI();
+    });
+
+    /* -------------------- Utilities -------------------- */
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    /* -------------------- Initial render -------------------- */
+    renderBooks(); renderMembers(); renderBorrowPage(); renderReturnPage(); renderSingletonUI();
+  </script>
+</body>
+</html>
